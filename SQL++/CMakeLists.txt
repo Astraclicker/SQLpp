@@ -19,7 +19,7 @@ set(MySQL_DLL_DIR_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/lib/mysql_debug/lib64/debug)
 set(MySQL_SSL_DLL_DIR_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/lib/mysql_release/lib64)
 set(MySQL_SSL_DLL_DIR_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/lib/mysql_debug/lib64)
 
-# Debug 用 debug 版本，其余配置（Release/RelWithDebInfo 等）用 release 版本
+# Debug 用 debug 版本
 set(MySQL_INCLUDE_DIR
     $<$<CONFIG:Debug>:${MySQL_INCLUDE_DIR_DEBUG}>
     $<$<NOT:$<CONFIG:Debug>>:${MySQL_INCLUDE_DIR_RELEASE}>
@@ -33,23 +33,7 @@ set(MySQL_DLL_DIR
     $<$<NOT:$<CONFIG:Debug>>:${MySQL_DLL_DIR_RELEASE}>
 )
 
-
-# 设置SQLite路径
-set(SQLite_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/SQLiteCpp)
-
-# 设置Redis路径
-set(Redis_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/redis-plus-plus)
-
-# 设置Hiredis路径
-set(Hiredis_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/hiredis)
-
 # 设置include路径
 include_directories(include)
 
 add_subdirectory(MySQL++)
-add_subdirectory(SQLite++)
-
-set(REDIS_PLUS_PLUS_BUILD_TEST OFF CACHE BOOL "Build tests for redis++" FORCE)
-set(DISABLE_TESTS ON CACHE BOOL "Disable hiredis tests" FORCE)
-
-add_subdirectory(Redis++)

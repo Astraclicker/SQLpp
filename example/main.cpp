@@ -1,6 +1,4 @@
-#include <SQLite++/SQLitepp.h>
 #include <MySQL++/MySQLpp.h>
-#include <Redis++/Redispp.h>
 
 #include <fstream>
 
