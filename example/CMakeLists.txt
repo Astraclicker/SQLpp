@@ -14,9 +14,7 @@ target_include_directories(
 target_link_libraries(
     ${PROJECT_NAME}
     PUBLIC
-    MySQL++
     SQLite++
-    Redis++
 )
 
 

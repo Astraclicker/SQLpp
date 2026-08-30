@@ -5,12 +5,16 @@
 #include <memory>
 #include <string>
 
-class SQLitepp
+namespace astra_sql
 {
-protected:
-    sqlite3 *db;
+    class SQLitepp
+    {
+    protected:
+        sqlite3 *db;
 
-public:
-    SQLitepp(const std::string &dbName);
-    ~SQLitepp();
-};
+    public:
+        SQLitepp(const std::string &dbName);
+        ~SQLitepp();
+    };
+
+}
