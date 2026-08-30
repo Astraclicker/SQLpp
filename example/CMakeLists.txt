@@ -9,12 +9,13 @@ target_include_directories(
     ${PROJECT_NAME}
     PUBLIC
     ${CMAKE_SOURCE_DIR}/SQL++
+    ${CMAKE_SOURCE_DIR}/SQL++/include
 )
 
 target_link_libraries(
     ${PROJECT_NAME}
     PUBLIC
-    SQLite++
+    Redis++
 )
 
 

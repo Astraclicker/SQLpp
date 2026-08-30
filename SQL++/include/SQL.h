@@ -5,7 +5,7 @@
 #include <string>
 namespace astra_sql
 {
-    // MySQL默认端口
+    // SQL默认端口
     constexpr unsigned int MySQL_DEFAULT_PORT = 3306;
     constexpr unsigned int Redis_DEFAULT_PORT = 6379;
 
