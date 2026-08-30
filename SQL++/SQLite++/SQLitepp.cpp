@@ -1,20 +1,15 @@
 #include "SQLitepp.h"
 
-namespace astra_sql
-{
-    SQLitepp::SQLitepp(const std::string &dbName)
-    {
-        if (sqlite3_open(dbName.c_str(), &db) != SQLITE_OK)
-        {
+namespace astra_sql {
+    SQLitepp::SQLitepp(const std::string &dbName) {
+        if (sqlite3_open(dbName.c_str(), &db) != SQLITE_OK) {
             std::cerr << "Cannot open database: " << sqlite3_errmsg(db) << std::endl;
             return;
         }
         std::clog << "SQLite connect successfully" << std::endl;
     }
 
-    SQLitepp::~SQLitepp()
-    {
+    SQLitepp::~SQLitepp() {
         sqlite3_close(db);
     }
-
 }

@@ -2,8 +2,7 @@
 
 #include <fstream>
 
-int main()
-{
+int main() {
     astra_sql::SQLitepp sqlite("test.db");
 
     return 0;
