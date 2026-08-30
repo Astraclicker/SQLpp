@@ -17,7 +17,8 @@
   </component>
   <component name="CMakeRunConfigurationManager">
     <generated>
-      <config projectName="SQLpp" targetName="SQLpp" />
+      <config projectName="example" targetName="test_main" />
+      <config projectName="example" targetName="MySQL++" />
     </generated>
   </component>
   <component name="CMakeSettings">
@@ -27,7 +28,9 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7c0b11ec-abbb-47a4-acda-23976986cb4a" name="Changes" comment="" />
+    <list default="true" id="7c0b11ec-abbb-47a4-acda-23976986cb4a" name="Changes" comment="clion重构开发">
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -36,8 +39,13 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Release" />
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="master" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory"><![CDATA[{
@@ -75,7 +83,10 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "ASKED_MARK_IGNORED_FILES_AS_EXCLUDED": "true",
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "CMake Application.SQLpp.executor": "Debug",
+    "CMake Application.test_main.executor": "Run",
     "CMake Debug.SQLpp.executor": "Debug",
     "CidrDebugProfileConversion": "true",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
@@ -84,10 +95,11 @@
     "RunOnceActivity.cidr.known.project.marker": "true",
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "master",
+    "git-widget-placeholder": "MySQL++",
     "nodejs_package_manager_path": "npm",
     "settings.editor.selected.configurable": "CPPToolchains"
   }
@@ -117,13 +129,20 @@
   "profileIdByStamp": [
     {
       "first": {
-        "##RUN_CONFIGURATION##": "CMake Application.SQLpp",
+        "##RUN_CONFIGURATION##": "CMake Application.test_main",
+        "cmake": "CMakeBuildProfile:Release"
+      },
+      "second": "26f1cfea-c5f3-4867-a792-bbf7dd3dce5e"
+    },
+    {
+      "first": {
+        "##RUN_CONFIGURATION##": "CMake Application.test_main",
         "cmake": "CMakeBuildProfile:Debug"
       },
       "second": "26f1cfea-c5f3-4867-a792-bbf7dd3dce5e"
     }
   ],
-  "modificationCount": 9
+  "modificationCount": 12
 }]]></component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -143,6 +162,10 @@
     <isAutomaticFoundErrors value="true" />
     <isAutomaticReloadCMake value="true" />
     <isAutomaticBootstrapAfterUpdate value="false" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="clion重构开发" />
+    <option name="LAST_COMMIT_MESSAGE" value="clion重构开发" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

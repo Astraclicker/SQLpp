@@ -2,8 +2,7 @@
 
 #include <fstream>
 
-int main()
-{
+int main() {
     astra_sql::MySQLpp mysql("127.0.0.1", astra_sql::MySQL_DEFAULT_PORT, "root", "password");
 
     mysql.switchDatabase("test_db");
