@@ -33,4 +33,8 @@ set(MySQL_DLL_DIR
     $<$<NOT:$<CONFIG:Debug>>:${MySQL_DLL_DIR_RELEASE}>
 )
 
+# 设置SQLite路径
+set(SQLite_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/SQLiteCpp)
+
 add_subdirectory(MySQL++)
+add_subdirectory(SQLite++)

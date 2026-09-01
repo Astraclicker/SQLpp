@@ -1,26 +1,18 @@
-
 #pragma once
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
-#include <sstream>
 
 #include <mysql_driver.h>
-#include <mysql_connection.h>
 #include <cppconn/connection.h>
 #include <cppconn/statement.h>
-#include <cppconn/resultset.h>
 #include <cppconn/prepared_statement.h>
 
 #include "../include/SQL.h"
 #include "../include/json.hpp"
 
-namespace astra_sql
-{
-
-    class MySQLpp
-    {
+namespace astra_sql {
+    class MySQLpp {
     private:
         // MySQL连接
         std::unique_ptr<sql::Connection> conn;
@@ -69,15 +61,15 @@ namespace astra_sql
         /**
          * @brief 为表结构增加项目
          * @param tableName 表名
-         * @param item 增加内容
-         * @param itemType 增加内容的数据类型
+         * @param data 增加内容
+         * @param types 增加内容的数据类型
          */
         SQLppError addItem(const std::string &tableName, const item &data, const mysqlItemType &types);
 
         /**
          * @brief 为表结构删除项目
          * @param tableName 表名
-         * @param itemRule 删除约束
+         * @param rule 删除约束
          */
         SQLppError delItem(const std::string &tableName, const itemRule &rule);
 
@@ -85,9 +77,10 @@ namespace astra_sql
          * @brief 为表结构更新项目
          * @param tableName 表名
          * @param data 更新内容
-         * @param type 更新内容的数据类型
+         * @param rule 更新内容的数据类型
          */
-        SQLppError updateItem(const std::string &tableName, const item &data, const mysqlItemType &types, const itemRule &rule);
+        SQLppError updateItem(const std::string &tableName, const item &data, const mysqlItemType &types,
+                              const itemRule &rule);
 
         /**
          * @brief   查找表结构中的内容
@@ -96,6 +89,7 @@ namespace astra_sql
          * @param rule 查找约束
          * @return json格式的查找结果
          */
-        nlohmann::json searchItem(const std::string &tableName, const std::vector<std::string> &data, const itemRule &rule);
+        nlohmann::json searchItem(const std::string &tableName, const std::vector<std::string> &data,
+                                  const itemRule &rule);
     };
 }

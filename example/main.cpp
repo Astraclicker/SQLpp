@@ -1,11 +1,9 @@
 #include <SQLite++/SQLitepp.h>
 #include <MySQL++/MySQLpp.h>
-#include <Redis++/Redispp.h>
 
 #include <fstream>
 
-void example_mysql()
-{
+void example_mysql() {
     astra_sql::MySQLpp mysql("127.0.0.1", astra_sql::MySQL_DEFAULT_PORT, "root", "password");
 
     mysql.switchDatabase("test_db");
@@ -44,11 +42,11 @@ void example_sqlite() {
     };
     sqlite.sqliteInsertItem("users", testItem, testType);
     // 删除表中数据
-    astra_sql::itemRule testRule{
-        {"userName", "=", "root"},
-        {"uid", ">", "0", "and"},
-    };
-    sqlite.sqliteDelItem("users", testRule);
+    // astra_sql::itemRule testRule{
+    //     {"userName", "=", "root"},
+    //     {"uid", ">", "0", "and"},
+    // };
+    //sqlite.sqliteDelItem("users", testRule);
     //修改表中数据
     // astra_sql::item item_test{
     //     {"userName", "xn王玉玺"},
@@ -72,7 +70,8 @@ void example_sqlite() {
     std::ofstream file("temp.json");
     file << sqlite.sqlitSearchItem("users", data_test, test_rule);
 }
+
 int main() {
     example_sqlite();
-    example_mysql();
+    // example_mysql();
 }
