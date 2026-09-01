@@ -24,7 +24,7 @@ namespace astra_sql
     }
 
     // 切换数据库
-    MySQLppError MySQLpp::switchDatabase(const std::string &SchemaName)
+    SQLppError MySQLpp::switchDatabase(const std::string &SchemaName)
     {
         try
         {
@@ -33,13 +33,13 @@ namespace astra_sql
         catch (const std::exception &e)
         {
             std::cerr << e.what() << '\n';
-            return MySQLppError::error_database;
+            return SQLppError::error_database;
         }
-        return MySQLppError::success;
+        return SQLppError::success;
     }
 
     // 新建数据库
-    MySQLppError MySQLpp::createDatabase(const std::string &SchemaName)
+    SQLppError MySQLpp::createDatabase(const std::string &SchemaName)
     {
         std::string sql = "CREATE DATABASE IF NOT EXISTS " + SchemaName;
         try
@@ -49,13 +49,13 @@ namespace astra_sql
         catch (const std::exception &e)
         {
             std::cerr << e.what() << '\n';
-            return MySQLppError::error_database;
+            return SQLppError::error_database;
         }
-        return MySQLppError::success;
+        return SQLppError::success;
     }
 
     // 删除数据库
-    MySQLppError MySQLpp::delDatabase(const std::string &SchemaName)
+    SQLppError MySQLpp::delDatabase(const std::string &SchemaName)
     {
         std::string sql = "DROP DATABASE IF EXISTS " + SchemaName;
         try
@@ -65,13 +65,13 @@ namespace astra_sql
         catch (const std::exception &e)
         {
             std::cerr << e.what() << '\n';
-            return MySQLppError::error_database;
+            return SQLppError::error_database;
         }
-        return MySQLppError::success;
+        return SQLppError::success;
     }
 
     // 增
-    MySQLppError MySQLpp::addItem(const std::string &tableName, const item &data, const itemType &types)
+    SQLppError MySQLpp::addItem(const std::string &tableName, const item &data, const mysqlItemType &types)
     {
         this->cmd = "insert into " + tableName + "(";
         int cnt = data.size();
@@ -112,44 +112,44 @@ namespace astra_sql
                 const std::string &value = data.at(i - 1).second;
                 switch (types.at(i - 1))
                 {
-                case dataType::BigInt:
+                case mysqlDataType::BigInt:
                     stmt->setBigInt(i, value);
                     break;
-                case dataType::Blob:
+                case mysqlDataType::Blob:
                 {
                     // setBlob 惰性读取流，流必须存活到 executeUpdate() 之后
                     blobStreams.emplace_back(std::make_unique<std::istringstream>(value));
                     stmt->setBlob(i, blobStreams.back().get());
                     break;
                 }
-                case dataType::Bool:
+                case mysqlDataType::Bool:
                     stmt->setBoolean(i, value == "true" || value == "1");
                     break;
-                case dataType::DataTime:
+                case mysqlDataType::DataTime:
                     stmt->setDateTime(i, value);
                     break;
-                case dataType::Double:
+                case mysqlDataType::Double:
                     stmt->setDouble(i, std::stod(value));
                     break;
-                case dataType::Int32:
+                case mysqlDataType::Int32:
                     stmt->setInt(i, std::stoi(value));
                     break;
-                case dataType::Int64:
+                case mysqlDataType::Int64:
                     stmt->setInt64(i, std::stoll(value));
                     break;
-                case dataType::Null:
+                case mysqlDataType::Null:
                     stmt->setNull(i, sql::DataType::SQLNULL);
                     break;
-                case dataType::String:
+                case mysqlDataType::String:
                     stmt->setString(i, value);
                     break;
-                case dataType::Uint32:
+                case mysqlDataType::Uint32:
                     stmt->setUInt(i, static_cast<uint32_t>(std::stoul(value)));
                     break;
-                case dataType::Uint64:
+                case mysqlDataType::Uint64:
                     stmt->setUInt64(i, std::stoull(value));
                     break;
-                case dataType::Vector:
+                case mysqlDataType::Vector:
                 {
                     std::vector<float> vec;
                     std::stringstream ss(value);
@@ -168,21 +168,16 @@ namespace astra_sql
         {
             this->cmd.clear();
             std::cerr << e.what() << '\n';
-            return MySQLppError::error_create;
+            return SQLppError::error_create;
         }
 
         this->cmd.clear();
-        return MySQLppError::success;
+        return SQLppError::success;
     }
 
     // 删
-    MySQLppError MySQLpp::delItem(const std::string &tableName, const itemRule &rule)
+    SQLppError MySQLpp::delItem(const std::string &tableName, const itemRule &rule)
     {
-        if (rule.empty())
-        {
-            std::cerr << "delItem: 未提供 WHERE 条件，拒绝全表删除\n";
-            return MySQLppError::error_del;
-        }
         this->cmd = "delete from " + tableName;
         for (auto i = rule.begin(); i != rule.end(); i++)
         {
@@ -206,25 +201,20 @@ namespace astra_sql
         {
             this->cmd.clear();
             std::cerr << e.what() << '\n';
-            return MySQLppError::error_del;
+            return SQLppError::error_del;
         }
         this->cmd.clear();
-        return MySQLppError::success;
+        return SQLppError::success;
     }
 
     // 改
-    MySQLppError MySQLpp::updateItem(const std::string &tableName, const item &data, const itemType &types, const itemRule &rule)
+    SQLppError MySQLpp::updateItem(const std::string &tableName, const item &data, const mysqlItemType &types, const itemRule &rule)
     {
-        int cnt = (int)data.size();
+        auto cnt = data.size();
         if (cnt == 0)
         {
-            std::cerr << "updateItem: 未指定要修改的字段\n";
-            return MySQLppError::error_change;
-        }
-        if (rule.empty())
-        {
-            std::cerr << "updateItem: 未提供 WHERE 条件，拒绝全表更新\n";
-            return MySQLppError::error_change;
+            std::cerr << "updateItem: no field specified to modify\n";
+            return SQLppError::error_change;
         }
 
         this->cmd = "update " + tableName + " set ";
@@ -252,44 +242,44 @@ namespace astra_sql
                 const std::string &value = data.at(i - 1).second;
                 switch (types.at(i - 1))
                 {
-                case dataType::BigInt:
+                case mysqlDataType::BigInt:
                     stmt->setBigInt(i, value);
                     break;
-                case dataType::Blob:
+                case mysqlDataType::Blob:
                 {
                     // setBlob 惰性读取流，流必须存活到 executeUpdate() 之后
                     blobStreams.emplace_back(std::make_unique<std::istringstream>(value));
                     stmt->setBlob(i, blobStreams.back().get());
                     break;
                 }
-                case dataType::Bool:
+                case mysqlDataType::Bool:
                     stmt->setBoolean(i, value == "true" || value == "1");
                     break;
-                case dataType::DataTime:
+                case mysqlDataType::DataTime:
                     stmt->setDateTime(i, value);
                     break;
-                case dataType::Double:
+                case mysqlDataType::Double:
                     stmt->setDouble(i, std::stod(value));
                     break;
-                case dataType::Int32:
+                case mysqlDataType::Int32:
                     stmt->setInt(i, std::stoi(value));
                     break;
-                case dataType::Int64:
+                case mysqlDataType::Int64:
                     stmt->setInt64(i, std::stoll(value));
                     break;
-                case dataType::Null:
+                case mysqlDataType::Null:
                     stmt->setNull(i, sql::DataType::SQLNULL);
                     break;
-                case dataType::String:
+                case mysqlDataType::String:
                     stmt->setString(i, value);
                     break;
-                case dataType::Uint32:
+                case mysqlDataType::Uint32:
                     stmt->setUInt(i, static_cast<uint32_t>(std::stoul(value)));
                     break;
-                case dataType::Uint64:
+                case mysqlDataType::Uint64:
                     stmt->setUInt64(i, std::stoull(value));
                     break;
-                case dataType::Vector:
+                case mysqlDataType::Vector:
                 {
                     std::vector<float> vec;
                     std::stringstream ss(value);
@@ -313,11 +303,11 @@ namespace astra_sql
         {
             this->cmd.clear();
             std::cerr << e.what() << '\n';
-            return MySQLppError::error_change;
+            return SQLppError::error_change;
         }
 
         this->cmd.clear();
-        return MySQLppError::success;
+        return SQLppError::success;
     }
 
     // 查

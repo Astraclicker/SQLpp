@@ -33,7 +33,4 @@ set(MySQL_DLL_DIR
     $<$<NOT:$<CONFIG:Debug>>:${MySQL_DLL_DIR_RELEASE}>
 )
 
-# 设置include路径
-include_directories(include)
-
 add_subdirectory(MySQL++)

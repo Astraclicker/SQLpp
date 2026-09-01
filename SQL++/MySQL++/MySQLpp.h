@@ -12,8 +12,8 @@
 #include <cppconn/resultset.h>
 #include <cppconn/prepared_statement.h>
 
-#include <SQL.h>
-#include <json.hpp>
+#include "../include/SQL.h"
+#include "../include/json.hpp"
 
 namespace astra_sql
 {
@@ -50,20 +50,20 @@ namespace astra_sql
          * @param SchemaName 切换到的数据库名
          */
 
-        MySQLppError switchDatabase(const std::string &SchemaName);
+        SQLppError switchDatabase(const std::string &SchemaName);
 
         /**
          * @brief 创建数据库
          * @param SchemaName 要创建的数据库名称
          */
-        MySQLppError createDatabase(const std::string &SchemaName);
+        SQLppError createDatabase(const std::string &SchemaName);
 
         /**
          * @brief 删库
          * @param SchemaName 要删除的数据库名称
          * @warning 跑路啦兄弟，跑路啦！！
          */
-        MySQLppError delDatabase(const std::string &SchemaName);
+        SQLppError delDatabase(const std::string &SchemaName);
 
         /**
          * @brief 为表结构增加项目
@@ -71,14 +71,14 @@ namespace astra_sql
          * @param item 增加内容
          * @param itemType 增加内容的数据类型
          */
-        MySQLppError addItem(const std::string &tableName, const item &data, const itemType &types);
+        SQLppError addItem(const std::string &tableName, const item &data, const mysqlItemType &types);
 
         /**
          * @brief 为表结构删除项目
          * @param tableName 表名
          * @param itemRule 删除约束
          */
-        MySQLppError delItem(const std::string &tableName, const itemRule &rule);
+        SQLppError delItem(const std::string &tableName, const itemRule &rule);
 
         /**
          * @brief 为表结构更新项目
@@ -86,7 +86,7 @@ namespace astra_sql
          * @param data 更新内容
          * @param type 更新内容的数据类型
          */
-        MySQLppError updateItem(const std::string &tableName, const item &data, const itemType &types, const itemRule &rule);
+        SQLppError updateItem(const std::string &tableName, const item &data, const mysqlItemType &types, const itemRule &rule);
 
         /**
          * @brief   查找表结构中的内容

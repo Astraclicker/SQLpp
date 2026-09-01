@@ -2,7 +2,8 @@
 
 #include <fstream>
 
-int main() {
+void example_mysql()
+{
     astra_sql::MySQLpp mysql("127.0.0.1", astra_sql::MySQL_DEFAULT_PORT, "root", "password");
 
     mysql.switchDatabase("test_db");
@@ -14,6 +15,9 @@ int main() {
     std::ofstream file("temp.json");
 
     file << mysql.searchItem("users", {"id", "userName", "password"}, rule);
-
+}
+int main()
+{
+    example_mysql();
     return 0;
 }
