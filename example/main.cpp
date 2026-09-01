@@ -1,7 +1,23 @@
-
 #include <SQLite++/SQLitepp.h>
+#include <MySQL++/MySQLpp.h>
+#include <Redis++/Redispp.h>
 
 #include <fstream>
+
+void example_mysql()
+{
+    astra_sql::MySQLpp mysql("127.0.0.1", astra_sql::MySQL_DEFAULT_PORT, "root", "password");
+
+    mysql.switchDatabase("test_db");
+
+    astra_sql::itemRule rule{
+        {"id", ">", "0"},
+    };
+
+    std::ofstream file("temp.json");
+
+    file << mysql.searchItem("users", {"id", "userName", "password"}, rule);
+}
 
 void example_sqlite() {
     //创建数据库并开启外键
@@ -17,8 +33,6 @@ void example_sqlite() {
         {"password", "string", "not null"}
     };
     sqlite.sqliteCreateTable("users", rule_test, nullptr, nullptr);
-
-
     //向表中插入数据
     astra_sql::item testItem{
         {"userName", "root"},
@@ -35,7 +49,6 @@ void example_sqlite() {
         {"uid", ">", "0", "and"},
     };
     sqlite.sqliteDelItem("users", testRule);
-
     //修改表中数据
     // astra_sql::item item_test{
     //     {"userName", "xn王玉玺"},
@@ -59,8 +72,7 @@ void example_sqlite() {
     std::ofstream file("temp.json");
     file << sqlite.sqlitSearchItem("users", data_test, test_rule);
 }
-
 int main() {
     example_sqlite();
-    return 0;
+    example_mysql();
 }
