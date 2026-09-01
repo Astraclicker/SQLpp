@@ -8,8 +8,5 @@ project(SQL++)
 # 设置SQLite路径
 set(SQLite_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/SQLiteCpp)
 
-# 设置include路径
-include_directories(include)
-
 add_subdirectory(SQLite++)
 
