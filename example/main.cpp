@@ -1,5 +1,6 @@
 #include <SQLite++/SQLitepp.h>
 #include <MySQL++/MySQLpp.h>
+#include <Redis++/Redispp.h>
 
 #include <fstream>
 
@@ -71,7 +72,14 @@ void example_sqlite() {
     file << sqlite.sqlitSearchItem("users", data_test, test_rule);
 }
 
+void example_redis() {
+    std::string password = "102410";
+    astra_sql::Redispp redis("0.0.0.0", astra_sql::Redis_DEFAULT_PORT, nullptr, &password, 0);
+}
+
+
 int main() {
     example_sqlite();
     // example_mysql();
+    //example_redis();
 }
