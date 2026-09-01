@@ -1,0 +1,9 @@
+[submodule "SQL++/lib/hiredis"]
+	path = SQL++/lib/hiredis
+	url = https://github.com/redis/hiredis.git
+[submodule "SQL++/lib/redis-plus-plus"]
+	path = SQL++/lib/redis-plus-plus
+	url = https://github.com/sewenew/redis-plus-plus.git
+[submodule "SQL++/lib/SQLiteCpp"]
+	path = SQL++/lib/SQLiteCpp
+	url = https://github.com/SRombauts/SQLiteCpp.git
