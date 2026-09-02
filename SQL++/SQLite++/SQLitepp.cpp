@@ -1,6 +1,7 @@
 
 #include "SQLitepp.h"
 #include <iostream>
+#include <stdexcept>
 
 #include "SQLiteCpp/ExecuteMany.h"
 
@@ -120,7 +121,7 @@ namespace astra_sql {
         try {
             checkError = sqlite3_step(stmt);
             if (checkError != SQLITE_DONE) {
-                throw std::exception("insert failed");
+                throw std::runtime_error("insert failed");
             }
         } catch (std::exception &error) {
             std::cerr << error.what() << std::endl << sqlite3_errmsg(db) << std::endl;
@@ -153,7 +154,7 @@ namespace astra_sql {
         try {
             checkError = sqlite3_step(stmt);
             if (checkError != SQLITE_DONE) {
-                throw std::exception("delete error");
+                throw std::runtime_error("delete error");
             }
         } catch (std::exception &error) {
             std::cerr << error.what() << std::endl << sqlite3_errmsg(db) << std::endl;
@@ -189,7 +190,7 @@ namespace astra_sql {
         try {
             checkError = sqlite3_step(stmt);
             if (checkError != SQLITE_DONE) {
-                throw std::exception("update error");
+                throw std::runtime_error("update error");
             }
         } catch (std::exception &error) {
             std::cerr << error.what() << std::endl << sqlite3_errmsg(db) << std::endl;
@@ -237,7 +238,7 @@ namespace astra_sql {
             }
 
             if (checkError != SQLITE_DONE) {
-                throw std::exception("select error");
+                throw std::runtime_error("select error");
             }
         } catch (std::exception &error) {
             std::cerr << error.what() << std::endl << sqlite3_errmsg(db) << std::endl;

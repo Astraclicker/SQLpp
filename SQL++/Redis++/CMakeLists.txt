@@ -15,7 +15,10 @@ set(REDIS_PLUS_PLUS_BUILD_STATIC ON)
 set(REDIS_PLUS_PLUS_BUILD_SHARED OFF)
 set(REDIS_PLUS_PLUS_BUILD_TEST OFF CACHE BOOL "Build tests for redis++" FORCE)
 
-# 先用 lib 下自带的 hiredis 源码，OVERRIDE_FIND_PACKAGE 让 redis-plus-plus 的 find_package(hiredis) 直接复用它
+# Linux/macOS 下 hiredis/redis++ 静态库以 -fPIC 编译，链接进共享库 libRedis++.so
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# 先用 lib 下自带的 hiredis 源码，OVERRIDE_FIND_PACKAGE 让 redis-plus-plus 的 find_package(hiredis) 复用
 include(FetchContent)
 set(FETCHCONTENT_SOURCE_DIR_HIREDIS ${Hiredis_DIR})
 FetchContent_Declare(hiredis OVERRIDE_FIND_PACKAGE)

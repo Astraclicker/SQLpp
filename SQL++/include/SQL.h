@@ -21,7 +21,6 @@ namespace astra_sql {
         String, // string
         Uint32, // uint32_t
         Uint64, // uint64_t
-        Vector, // std::vector
     };
 
     //sqlite数据类型枚举

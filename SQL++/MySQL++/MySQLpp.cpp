@@ -119,15 +119,6 @@ namespace astra_sql {
                     case mysqlDataType::Uint64:
                         stmt->setUInt64(i, std::stoull(value));
                         break;
-                    case mysqlDataType::Vector: {
-                        std::vector<float> vec;
-                        std::stringstream ss(value);
-                        std::string token;
-                        while (std::getline(ss, token, ','))
-                            vec.push_back(std::stof(token));
-                        stmt->setVector(i, vec);
-                        break;
-                    }
                 }
             }
 
@@ -232,15 +223,6 @@ namespace astra_sql {
                     case mysqlDataType::Uint64:
                         stmt->setUInt64(i, std::stoull(value));
                         break;
-                    case mysqlDataType::Vector: {
-                        std::vector<float> vec;
-                        std::stringstream ss(value);
-                        std::string token;
-                        while (std::getline(ss, token, ','))
-                            vec.push_back(std::stof(token));
-                        stmt->setVector(i, vec);
-                        break;
-                    }
                 }
             }
 
