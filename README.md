@@ -21,6 +21,7 @@
 
 1. **`-DMySQL_ROOT=<安装根目录>`**
    在 CMake 配置时传入，例如：
+
    ```bash
    cmake -B build -DMySQL_ROOT=/usr/local/mysql-connector-cpp
    ```
@@ -32,9 +33,15 @@
    - **Linux / macOS**：自动通过 `find_path` / `find_library` 探测系统安装的 `mysqlcppconn`（含 Homebrew 的 `/opt/homebrew/opt/mysql-connector-c++`）。
 
 ### Windows 说明
+
 - 官方二进制根目录下需存在 `mysql_release` / `mysql_debug`（含 `include/jdbc`、`lib64/vs14` 等）。
 - 构建后会自动把 `mysqlcppconn-10-vs14.dll`、`libssl-3-x64.dll`、`libcrypto-3-x64.dll` 复制到输出目录。
 
 ### Linux / macOS 说明
+
 - 请安装 MySQL Connector/C++包，或通过 `-DMySQL_ROOT=<path>` 指定安装路径
 - 识别库名：`mysqlcppconn`、`mysqlcppconn8`、`mysqlcppconn9`、`mysqlclient`。
+
+## 特别说明
+
+使用时只需将SQL++复制到需要的文件夹并链接即可
