@@ -11,8 +11,10 @@
 #include "../include/SQL.h"
 #include "../include/json.hpp"
 
-namespace astra_sql {
-    class MySQLpp {
+namespace astra_sql
+{
+    class MySQLpp
+    {
     private:
         // MySQL连接
         std::unique_ptr<sql::Connection> conn;
@@ -37,6 +39,21 @@ namespace astra_sql {
 
         // 析构函数
         ~MySQLpp() = default;
+
+        /**
+         * @brief sqlite创建表
+         * @param tableName 要创建的表名
+         * @param createRule 创建表的规则
+         * @param primaryKey 主键规则
+         * @param uniqueKey 为唯一键规则
+         * @return 报错枚举
+         */
+
+        SQLppError mysqlCreateTable(
+            const std::string &tableName,
+            const std::vector<createTableRule> &createRule,
+            const primaryKeyRule *primaryKey,
+            const uniqueKeyRule *uniqueKey);
 
         /**
          * @brief 切换操作的数据库
