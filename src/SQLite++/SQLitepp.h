@@ -5,8 +5,8 @@
 #include <vector>
 #include <string>
 
-#include "../include/SQL.h"
-#include "../include/json.hpp"
+#include "../../include/SQL.h"
+#include "../../include/json.hpp"
 
 namespace astra_sql {
     class SQLitepp {

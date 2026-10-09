@@ -8,10 +8,16 @@ add_library(
 
 set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 
+target_include_directories(
+        ${PROJECT_NAME}
+        PUBLIC
+        ${INCLUDE_DIR}
+)
+
 target_link_libraries(
         ${PROJECT_NAME}
         PUBLIC
         SQLiteCpp
 )
 
-add_subdirectory(${SQLite_DIR} ${CMAKE_BINARY_DIR}/SQL++/SQLiteCpp)
+add_subdirectory(${SQLite_DIR} ${CMAKE_BINARY_DIR}/SQLpp/SQLiteCpp)

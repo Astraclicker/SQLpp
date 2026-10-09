@@ -1,9 +1,6 @@
-
 #include "SQLitepp.h"
 #include <iostream>
 #include <stdexcept>
-
-#include "SQLiteCpp/ExecuteMany.h"
 
 namespace astra_sql
 {

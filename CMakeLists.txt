@@ -1,20 +1,31 @@
-cmake_minimum_required(VERSION 4.1)
+cmake_minimum_required(VERSION 3.16)
 
-project(example)
+project(SQLpp)
+
+if (MSVC)
+    add_compile_options(/utf-8)
+else ()
+    add_compile_options(-finput-charset=UTF-8 -fexec-charset=UTF-8)
+endif ()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-#配置输出：按构建配置分别输出到 bin/<Config>
-#（set() 不会展开生成器表达式 $<CONFIG>，必须用按配置区分的 *_OUTPUT_DIRECTORY_<CONFIG> 变量）
-foreach(_cfg Debug Release RelWithDebInfo MinSizeRel)
-    string(TOUPPER "${_cfg}" _CFG)
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${_CFG} ${PROJECT_SOURCE_DIR}/bin/${_cfg})
-endforeach()
-unset(_cfg)
-unset(_CFG)
+set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+#导入MySQL包
+find_package(mysql-concpp REQUIRED)
 
+# 设置SQLite路径
+set(SQLite_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/SQLiteCpp)
 
-add_subdirectory(example)
-add_subdirectory(SQL++)
+# 设置Redis路径
+set(Redis_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/redis-plus-plus)
+# 设置Hiredis路径
+set(Hiredis_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/hiredis)
+
+# 关闭lib测试输出
+set(REDIS_PLUS_PLUS_BUILD_TEST OFF CACHE BOOL "Build tests for redis++" FORCE)
+set(DISABLE_TESTS ON CACHE BOOL "Disable hiredis tests" FORCE)
+
+add_subdirectory(src)

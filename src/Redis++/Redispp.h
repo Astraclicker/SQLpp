@@ -1,9 +1,6 @@
 #pragma once
 #include <string>
 #include<iostream>
-
-#include "../include/SQL.h"
-
 #include <sw/redis++/redis++.h>
 
 namespace astra_sql {

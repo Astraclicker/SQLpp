@@ -1,9 +1,9 @@
 project(Redis++)
 
 add_library(
-    ${PROJECT_NAME}
-    SHARED
-    Redispp.cpp
+        ${PROJECT_NAME}
+        SHARED
+        Redispp.cpp
 )
 
 #导出所有符号
@@ -27,17 +27,22 @@ FetchContent_MakeAvailable(hiredis)
 # redis-plus-plus 的 FindHiredis 需要这个变量指向包含 hiredis/ 头文件目录的父目录
 get_filename_component(hiredis_INCLUDE_DIRS ${Hiredis_DIR} DIRECTORY)
 
-add_subdirectory(${Redis_DIR} ${CMAKE_BINARY_DIR}/SQL++/redis-plus-plus)
+add_subdirectory(${Redis_DIR} ${CMAKE_BINARY_DIR}/SQLpp/redis-plus-plus)
 
-if(REDIS_PLUS_PLUS_BUILD_SHARED)
+if (REDIS_PLUS_PLUS_BUILD_SHARED)
     set(Redispp_LINK_LIB redis++::redis++)
-else()
+else ()
     set(Redispp_LINK_LIB redis++::redis++_static)
-endif()
+endif ()
 
+target_include_directories(
+        ${PROJECT_NAME}
+        PUBLIC
+        ${INCLUDE_DIR}
+)
 
 target_link_libraries(
-    ${PROJECT_NAME}
-    PUBLIC
-    ${Redispp_LINK_LIB}
+        ${PROJECT_NAME}
+        PUBLIC
+        ${Redispp_LINK_LIB}
 )

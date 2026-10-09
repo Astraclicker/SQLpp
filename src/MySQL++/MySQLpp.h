@@ -3,18 +3,16 @@
 #include <string>
 #include <vector>
 
+#include "../../include/SQL.h"
+#include "../../include/json.hpp"
+
 #include <mysql_driver.h>
 #include <cppconn/connection.h>
 #include <cppconn/statement.h>
 #include <cppconn/prepared_statement.h>
 
-#include "../include/SQL.h"
-#include "../include/json.hpp"
-
-namespace astra_sql
-{
-    class MySQLpp
-    {
+namespace astra_sql {
+    class MySQLpp {
     private:
         // MySQL连接
         std::unique_ptr<sql::Connection> conn;
