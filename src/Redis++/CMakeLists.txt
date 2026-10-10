@@ -2,12 +2,9 @@ project(Redis++)
 
 add_library(
         ${PROJECT_NAME}
-        SHARED
+        STATIC
         Redispp.cpp
 )
-
-#导出所有符号
-set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 
 set(BUILD_SHARED_LIBS OFF)
 set(DISABLE_TESTS ON CACHE BOOL "Disable hiredis tests" FORCE)

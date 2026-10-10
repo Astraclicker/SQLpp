@@ -2,11 +2,9 @@ project(SQLite++)
 
 add_library(
         ${PROJECT_NAME}
-        SHARED
+        STATIC
         SQLitepp.cpp
 )
-
-set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 
 target_include_directories(
         ${PROJECT_NAME}
