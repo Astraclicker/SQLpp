@@ -2,19 +2,19 @@ project(SQLite++)
 
 add_library(
         ${PROJECT_NAME}
-        STATIC
-        SQLitepp.cpp
+        INTERFACE
+        SQLitepp.h
 )
 
 target_include_directories(
         ${PROJECT_NAME}
-        PUBLIC
+        INTERFACE
         ${INCLUDE_DIR}
 )
 
 target_link_libraries(
         ${PROJECT_NAME}
-        PUBLIC
+        INTERFACE
         SQLiteCpp
 )
 

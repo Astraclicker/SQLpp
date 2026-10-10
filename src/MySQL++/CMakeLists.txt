@@ -2,20 +2,19 @@ project(MySQL++)
 
 add_library(
         ${PROJECT_NAME}
-        STATIC
-        MySQLpp.cpp
+        INTERFACE
+        MySQLpp.h
 )
-
 
 target_include_directories(
         ${PROJECT_NAME}
-        PUBLIC
+        INTERFACE
         ${INCLUDE_DIR}
         ${MYSQL_CONCPP_INCLUDE_DIR}/jdbc
 )
 
 target_link_libraries(
         ${PROJECT_NAME}
-        PUBLIC
+        INTERFACE
         mysql::concpp-jdbc
 )
