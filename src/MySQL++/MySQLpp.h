@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <mutex>
 
 #include "../../include/SQL.h"
 #include "../../include/json.hpp"
@@ -15,7 +16,9 @@
 namespace astra_sql {
 class MySQLpp
 {
-private:
+protected:
+    //锁
+    std::mutex sqlMtx;
     // MySQL连接
     std::unique_ptr<sql::Connection> conn;
     // MySQL驱动
@@ -60,9 +63,6 @@ public:
         }
     }
 
-    // 析构函数
-    ~MySQLpp() = default;
-
     /**
      * @brief sqlite创建表
      * @param tableName 要创建的表名
@@ -71,7 +71,6 @@ public:
      * @param uniqueKey 为唯一键规则
      * @param errorCode 错误信息
      * @param callbackSuccess 连接成功回调函数
-     * @return 报错枚举
      */
 
     template <typename callbackFunc>
@@ -83,6 +82,7 @@ public:
         std::string &errorCode,
         callbackFunc &&callbackSuccess
     ) {
+        std::unique_lock lock(sqlMtx);
         cmd = "create table if not exists " + tableName + " ( ";
         for (const auto &i : createRule) {
             cmd += i.field + " " + i.type + " " + i.restriction + ",";
@@ -107,6 +107,7 @@ public:
         try {
             preStmt.reset(conn->prepareStatement(this->cmd));
             preStmt->execute();
+            lock.unlock();
             callbackSuccess();
         } catch (const std::exception &e) {
             errorCode = e.what();
@@ -124,8 +125,10 @@ public:
         const std::string &SchemaName,
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
+        std::unique_lock lock(sqlMtx);
         try {
             conn->setSchema(SchemaName);
+            lock.unlock();
             callbackSuccess();
         } catch (const std::exception &e) {
             errorCode = e.what();
@@ -143,9 +146,11 @@ public:
         const std::string &SchemaName,
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
+        std::unique_lock lock(sqlMtx);
         cmd = "CREATE DATABASE IF NOT EXISTS " + SchemaName;
         try {
             stmt->execute(cmd);
+            lock.unlock();
             callbackSuccess();
         } catch (const std::exception &e) {
             errorCode = e.what();
@@ -164,9 +169,11 @@ public:
         const std::string &SchemaName,
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
+        std::unique_lock lock(sqlMtx);
         cmd = "DROP DATABASE IF EXISTS " + SchemaName;
         try {
             stmt->execute(cmd);
+            lock.unlock();
             callbackSuccess();
         } catch (const std::exception &e) {
             errorCode = e.what();
@@ -188,6 +195,7 @@ public:
         const mysqlItemType &types,
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
+        std::unique_lock lock(sqlMtx);
         this->cmd = "insert into " + tableName + "(";
         const auto cnt = data.size();
         for (int i = 0; i < cnt; i++) {
@@ -256,6 +264,7 @@ public:
             }
 
             preStmt->executeUpdate();
+            lock.unlock();
             callbackSuccess();
         } catch (const std::exception &e) {
             errorCode = e.what();
@@ -277,6 +286,7 @@ public:
         std::string &errorCode,
         callbackFunc &&callbackSuccess
     ) {
+        std::unique_lock lock(sqlMtx);
         this->cmd = "delete from " + tableName;
         for (auto i = rule.begin(); i != rule.end(); ++i) {
             cmd += ' ';
@@ -293,6 +303,7 @@ public:
                 preStmt->setString(i + 1, rule[i].value);
             }
             preStmt->execute();
+            lock.unlock();
             callbackSuccess();
         } catch (const std::exception &e) {
             errorCode = e.what();
@@ -318,12 +329,8 @@ public:
         std::string &errorCode,
         callbackFunc &&callbackSuccess
     ) {
+        std::unique_lock lock(sqlMtx);
         const auto cnt = data.size();
-        if (cnt == 0) {
-            std::cerr << "updateItem: no field specified to modify\n";
-            return;
-        }
-
         this->cmd = "update " + tableName + " set ";
         for (int i = 0; i < cnt; i++) {
             this->cmd += data.at(i).first;
@@ -388,6 +395,7 @@ public:
                 preStmt->setString(cnt + 1 + j, rule[j].value);
             }
             preStmt->executeUpdate();
+            lock.unlock();
             callbackSuccess();
         } catch (const std::exception &e) {
             errorCode = e.what();
@@ -411,6 +419,7 @@ public:
         std::string &errorCode,
         callbackFunc &&callbackSuccess
     ) {
+        std::unique_lock lock(sqlMtx);
         this->cmd = "select ";
         if (data.empty()) {
             this->cmd += '*';
@@ -455,6 +464,7 @@ public:
                     result[meta->getColumnLabel(c)].push_back(res->getString(c));
                 }
             }
+            lock.unlock();
             callbackSuccess();
             return result;
         } catch (const std::exception &e) {
@@ -462,5 +472,8 @@ public:
         }
         return {};
     }
+
+    // 析构函数
+    ~MySQLpp() = default;
 };
 } // namespace astra_sql

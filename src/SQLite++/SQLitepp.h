@@ -2,9 +2,9 @@
 
 #include <sqlite3.h>
 
-#include <iostream>
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include "../../include/SQL.h"
 #include "../../include/json.hpp"
@@ -13,6 +13,8 @@ namespace astra_sql {
 class SQLitepp
 {
 protected:
+    //锁
+    std::mutex sqlMtx;
     // sqlite执行命令
     std::string cmd;
     // sqlite错误处理
@@ -54,7 +56,6 @@ public:
      * @param uniqueKey 为唯一键规则
      * @param errorCode 错误信息
      * @param callbackSuccess 连接成功回调函数
-     * @return 报错枚举
      */
 
     template <typename callbackFunc>
@@ -66,6 +67,7 @@ public:
         std::string &errorCode,
         callbackFunc &&callbackSuccess
     ) {
+        std::unique_lock lock(sqlMtx);
         cmd = "create table if not exists " + tableName + " ( ";
         for (const auto &i : createRule) {
             cmd += i.field + " " + i.type + " " + i.restriction + ",";
@@ -94,6 +96,7 @@ public:
         } catch (std::exception &error) {
             errorCode = error.what();
         }
+        lock.unlock();
         callbackSuccess();
     }
 
@@ -111,6 +114,7 @@ public:
         const std::string &tableName,
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
+        std::unique_lock lock(sqlMtx);
         cmd = "drop table if exists " + tableName;
         try {
             checkError = sqlite3_exec(db, cmd.c_str(), nullptr, nullptr, &errMsg);
@@ -120,6 +124,7 @@ public:
         } catch (std::exception &error) {
             errorCode = error.what();
         }
+        lock.unlock();
         callbackSuccess();
     }
 
@@ -139,6 +144,7 @@ public:
         const sqliteItemType &type,
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
+        std::unique_lock lock(sqlMtx);
         const auto cnt = data.size();
         cmd = "insert into " + tableName + "(";
         for (auto i = data.begin(); i != data.end(); ++i) {
@@ -182,6 +188,7 @@ public:
         } catch (std::exception &error) {
             errorCode = error.what();
         }
+        lock.unlock();
         callbackSuccess();
     }
 
@@ -199,6 +206,7 @@ public:
         const itemRule &rule,
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
+        std::unique_lock lock(sqlMtx);
         // 准备语句
         cmd = "delete from " + tableName;
         for (auto i = rule.begin(); i != rule.end(); ++i) {
@@ -222,6 +230,7 @@ public:
         } catch (std::exception &error) {
             errorCode = error.what();
         }
+        lock.unlock();
         callbackSuccess();
     }
 
@@ -230,7 +239,7 @@ public:
      * @param tableName 要更改的表名
      * @param data 更改的数据
      * @param rule 更改规则
-    * @param errorCode 错误信息
+     * @param errorCode 错误信息
      * @param callbackSuccess 连接成功回调函数
      */
 
@@ -241,6 +250,7 @@ public:
         const itemRule &rule,
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
+        std::unique_lock lock(sqlMtx);
         // 准备语句
         cmd = "update " + tableName + " set ";
         for (auto i = data.begin(); i != data.end(); ++i) {
@@ -270,6 +280,7 @@ public:
         } catch (std::exception &error) {
             errorCode = error.what();
         }
+        lock.unlock();
         callbackSuccess();
     }
 
@@ -291,6 +302,7 @@ public:
         std::string &errorCode,
         callbackFunc &&callbackSuccess
     ) {
+        std::unique_lock lock(sqlMtx);
         // 准备语句
         cmd = "select ";
         for (auto i = data.begin(); i != data.end(); ++i) {
@@ -331,6 +343,8 @@ public:
             errorCode = error.what();
             return nlohmann::json{};
         }
+        lock.unlock();
+        callbackSuccess();
         return result;
     }
 
