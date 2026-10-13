@@ -18,8 +18,6 @@ namespace astra_sql {
 class MySQLpp
 {
 protected:
-    //锁
-    std::mutex sqlMtx;
     // MySQL连接
     std::unique_ptr<sql::Connection> conn;
     // MySQL驱动
@@ -84,7 +82,6 @@ public:
         callbackFunc &&callbackSuccess
     ) {
         errorCode.clear();
-        std::unique_lock lock(sqlMtx);
         this->cmd = "create table if not exists " + tableName + " ( ";
         for (const auto &i : createRule) {
             this->cmd += i.field + " " + i.type + " " + i.restriction + ",";
@@ -109,7 +106,6 @@ public:
         try {
             preStmt.reset(conn->prepareStatement(this->cmd));
             preStmt->execute();
-            lock.unlock();
             callbackSuccess();
         } catch (const std::exception &e) {
             errorCode = e.what();
@@ -128,10 +124,8 @@ public:
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
         errorCode.clear();
-        std::unique_lock lock(sqlMtx);
         try {
             conn->setSchema(SchemaName);
-            lock.unlock();
             callbackSuccess();
         } catch (const std::exception &e) {
             errorCode = e.what();
@@ -149,12 +143,10 @@ public:
         const std::string &SchemaName,
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
-        std::unique_lock lock(sqlMtx);
         errorCode.clear();
         this->cmd = "CREATE DATABASE IF NOT EXISTS " + SchemaName;
         try {
             stmt->execute(this->cmd);
-            lock.unlock();
             callbackSuccess();
         } catch (const std::exception &e) {
             errorCode = e.what();
@@ -174,11 +166,9 @@ public:
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
         errorCode.clear();
-        std::unique_lock lock(sqlMtx);
         this->cmd = "DROP DATABASE IF EXISTS " + SchemaName;
         try {
             stmt->execute(this->cmd);
-            lock.unlock();
             callbackSuccess();
         } catch (const std::exception &e) {
             errorCode = e.what();
@@ -201,7 +191,6 @@ public:
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
         errorCode.clear();
-        std::unique_lock lock(sqlMtx);
         this->cmd = "insert into " + tableName + "(";
         const auto cnt = data.size();
         for (int i = 0; i < cnt; i++) {
@@ -270,7 +259,6 @@ public:
             }
 
             preStmt->executeUpdate();
-            lock.unlock();
             callbackSuccess();
         } catch (const std::exception &e) {
             errorCode = e.what();
@@ -293,7 +281,6 @@ public:
         callbackFunc &&callbackSuccess
     ) {
         errorCode.clear();
-        std::unique_lock lock(sqlMtx);
         this->cmd = "delete from " + tableName;
         for (auto i = rule.begin(); i != rule.end(); ++i) {
             this->cmd += ' ';
@@ -312,7 +299,6 @@ public:
                 preStmt->setString(i + 1, rule[i].value);
             }
             preStmt->execute();
-            lock.unlock();
             callbackSuccess();
         } catch (const std::exception &e) {
             errorCode = e.what();
@@ -339,7 +325,6 @@ public:
         callbackFunc &&callbackSuccess
     ) {
         errorCode.clear();
-        std::unique_lock lock(sqlMtx);
         const auto cnt = data.size();
         this->cmd = "update " + tableName + " set ";
         for (int i = 0; i < cnt; i++) {
@@ -407,7 +392,6 @@ public:
                 preStmt->setString(cnt + 1 + j, rule[j].value);
             }
             preStmt->executeUpdate();
-            lock.unlock();
             callbackSuccess();
         } catch (const std::exception &e) {
             errorCode = e.what();
@@ -432,7 +416,6 @@ public:
         callbackFunc &&callbackSuccess
     ) {
         errorCode.clear();
-        std::unique_lock lock(sqlMtx);
         this->cmd = "select ";
         if (data.empty()) {
             this->cmd += '*';
@@ -479,7 +462,6 @@ public:
                     result[meta->getColumnLabel(c)].push_back(res->getString(c));
                 }
             }
-            lock.unlock();
             callbackSuccess();
             return result;
         } catch (const std::exception &e) {
@@ -530,7 +512,17 @@ public:
         return pool;
     }
 
-    //初始化连接池
+    /**
+     * @brief 初始化连接池
+     * @param _host MySQL地址
+     * @param _port MySQL端口
+     * @param _userName MySQL用户名
+     * @param _password MySQL密码
+     * @param _minConnectNums 最小连接数
+     * @param _maxConnectNums 最大连接数
+     * @param errorCode string错误信息
+     * @param callbackSuccess 连接池创建成功回调函数
+     */
     template <typename callbackFunc>
     void initMySQLppConnectPoll(
         const std::string &_host,
@@ -539,8 +531,10 @@ public:
         const std::string &_password,
         unsigned long long _minConnectNums,
         unsigned long long _maxConnectNums,
+        std::string &errorCode,
         callbackFunc &&callbackSuccess
     ) {
+        errorCode.clear();
         static std::once_flag flag;
         std::call_once(
             flag,
@@ -560,16 +554,25 @@ public:
                         _userName,
                         _password,
                         ec,
-                        callbackSuccess);
+                        []() {
+                        });
                     if (!ec.empty()) {
-                        throw std::runtime_error(ec);
+                        errorCode = ec;
+                        return;
                     }
                     connectQueue.push(std::move(conn));
                 }
+                callbackSuccess();
             });
     }
 
-    //获取连接池中的一条连接
+    /**
+     * @brief 获取连接池中的一条连接
+     * @param errorCode string错误信息
+     * @param callbackSuccess 获取连接成功回调函数
+     * @param timeoutMs
+     * @return MySQL连接
+     */
     template <typename callbackFunc>
     std::unique_ptr<MySQLpp> acquire(
         std::string &errorCode,
@@ -590,7 +593,8 @@ public:
                     userName,
                     password,
                     ec,
-                    callbackSuccess);
+                    []() {
+                    });
                 if (!ec.empty()) {
                     lock.lock();
                     currentConnectNums--;
@@ -598,6 +602,7 @@ public:
                     errorCode = ec;
                     return nullptr;
                 }
+                callbackSuccess();
                 return conn;
             }
             if (cv.wait_until(lock, ddl) == std::cv_status::timeout) {
@@ -611,10 +616,15 @@ public:
         connectQueue.pop();
         currentConnectNums++;
         lock.unlock();
+        callbackSuccess();
         return conn;
     }
 
-    //归还连接
+    /**
+     * @brief 归还连接
+     * @param conn 归还的连接
+     * @param callbackSuccess 归还成功回调函数
+     */
     template <typename callbackFunc>
     void release(
         std::unique_ptr<MySQLpp> conn,
