@@ -9,7 +9,7 @@ add_library(
 target_include_directories(
         ${PROJECT_NAME}
         INTERFACE
-        ${INCLUDE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../include
 )
 
 target_link_libraries(
@@ -19,3 +19,4 @@ target_link_libraries(
 )
 
 add_subdirectory(${SQLite_DIR} ${CMAKE_BINARY_DIR}/SQLpp/SQLiteCpp)
+target_include_directories(${PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})

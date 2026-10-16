@@ -30,7 +30,7 @@ protected:
 
 public:
     /**
-     * @brief mysqlpp类构造函数
+     * @brief MySQLpp类构造函数
      * @param host MySQL服务器地址
      * @param port MySQL端口
      * @param UserName MySQL用户名
