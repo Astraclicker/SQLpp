@@ -5,8 +5,8 @@
 
 namespace astra_sql {
 // SQL默认端口
-constexpr unsigned int MySQL_DEFAULT_PORT = 3306;
-constexpr unsigned int Redis_DEFAULT_PORT = 6379;
+constexpr uint16_t MySQL_DEFAULT_PORT = 3306;
+constexpr uint16_t Redis_DEFAULT_PORT = 6379;
 
 // mysql数据类型枚举
 enum class mysqlDataType

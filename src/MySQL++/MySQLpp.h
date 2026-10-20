@@ -570,16 +570,16 @@ public:
      * @brief 获取连接池中的一条连接
      * @param errorCode string错误信息
      * @param callbackSuccess 获取连接成功回调函数
-     * @param timeoutMs
+     * @param timeoutMs 超时毫秒数
      * @return MySQL连接
      */
     template <typename callbackFunc>
     std::unique_ptr<MySQLpp> acquire(
         std::string &errorCode,
         callbackFunc &&callbackSuccess,
-        std::chrono::milliseconds timeoutMs) {
+        const std::chrono::milliseconds timeoutMs) {
         errorCode.clear();
-        auto ddl = std::chrono::steady_clock::now() + timeoutMs;
+        const auto ddl = std::chrono::steady_clock::now() + timeoutMs;
         std::unique_lock lock(mtx);
         while (connectQueue.empty()) {
             if (currentConnectNums < maxConnectNums) {
