@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include <defSqlCommon.h>
 #include <defSQLite.h>
 #include <json.hpp>
 
