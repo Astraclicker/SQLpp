@@ -11,8 +11,9 @@
 #include <mutex>
 #include <queue>
 
-#include "../../include/SQL.h"
-#include "../../include/json.hpp"
+#include <defSqlCommon.h>
+#include <defMySQL.h>
+#include <json.hpp>
 
 namespace astra_sql {
 class MySQLpp
@@ -75,7 +76,7 @@ public:
     template <typename callbackFunc>
     void mysqlCreateTable(
         const std::string &tableName,
-        const std::vector<createTableRule> &createRule,
+        const std::vector<mysqlCreateTableRule> &createRule,
         const primaryKeyRule *primaryKey,
         const uniqueKeyRule *uniqueKey,
         std::string &errorCode,
@@ -84,7 +85,12 @@ public:
         errorCode.clear();
         this->cmd = "create table if not exists " + tableName + " ( ";
         for (const auto &i : createRule) {
-            this->cmd += i.field + " " + i.type + " " + i.restriction + ",";
+            this->cmd += i.field;
+            this->cmd += ' ';
+            this->cmd += toMySQLDataType(i.type);
+            this->cmd += ' ';
+            this->cmd += i.restriction;
+            this->cmd += ',';
         }
         if (primaryKey != nullptr) {
             this->cmd += "primary key (";
@@ -288,7 +294,7 @@ public:
             this->cmd += ' ';
             this->cmd += i->field;
             this->cmd += ' ';
-            this->cmd += toSql(i->op);
+            this->cmd += toSqlOp(i->op);
             this->cmd += '?';
         }
 
@@ -338,7 +344,7 @@ public:
             this->cmd += ' ';
             this->cmd += i->field;
             this->cmd += ' ';
-            this->cmd += toSql(i->op);
+            this->cmd += toSqlOp(i->op);
             this->cmd += '?';
         }
 
@@ -435,7 +441,7 @@ public:
             this->cmd += ' ';
             this->cmd += i->field;
             this->cmd += ' ';
-            this->cmd += toSql(i->op);
+            this->cmd += toSqlOp(i->op);
             this->cmd += '?';
         }
 

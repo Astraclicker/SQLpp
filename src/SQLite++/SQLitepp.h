@@ -6,8 +6,8 @@
 #include <vector>
 #include <mutex>
 
-#include "../../include/SQL.h"
-#include "../../include/json.hpp"
+#include <defSQLite.h>
+#include <json.hpp>
 
 namespace astra_sql {
 class SQLitepp
@@ -61,7 +61,7 @@ public:
     template <typename callbackFunc>
     void sqliteCreateTable(
         const std::string &tableName,
-        const std::vector<createTableRule> &createRule,
+        const std::vector<sqliteCreateTableRule> &createRule,
         const primaryKeyRule *primaryKey,
         const uniqueKeyRule *uniqueKey,
         std::string &errorCode,
@@ -70,7 +70,12 @@ public:
         std::unique_lock lock(sqlMtx);
         cmd = "create table if not exists " + tableName + " ( ";
         for (const auto &i : createRule) {
-            cmd += i.field + " " + i.type + " " + i.restriction + ",";
+            cmd += i.field;
+            cmd += ' ';
+            cmd += toSqliteDataType(i.type);
+            cmd += ' ';
+            cmd += i.restriction;
+            cmd += ',';
         }
         if (primaryKey != nullptr) {
             cmd += "primary key (";
@@ -211,7 +216,7 @@ public:
         cmd = "delete from " + tableName;
         for (auto i = rule.begin(); i != rule.end(); ++i) {
             cmd += i == rule.begin() ? " where" : " " + i->link;
-            cmd += " " + i->field + " " += toSql(i->op);
+            cmd += " " + i->field + " " += toSqlOp(i->op);
             cmd += '?';
         }
         cmd += ';';
@@ -258,7 +263,7 @@ public:
         }
         for (auto i = rule.begin(); i != rule.end(); ++i) {
             cmd += i == rule.begin() ? " where" : " " + i->link;
-            cmd += " " + i->field + " " += toSql(i->op);
+            cmd += " " + i->field + " " += toSqlOp(i->op);
             cmd += '?';
         }
         sqlite3_prepare_v2(db, cmd.c_str(), -1, &stmt, nullptr);
@@ -311,7 +316,7 @@ public:
         cmd += " from " + tableName;
         for (auto i = rule.begin(); i != rule.end(); ++i) {
             cmd += i == rule.begin() ? " where" : " " + i->link;
-            cmd += " " + i->field + " " += toSql(i->op);
+            cmd += " " + i->field + " " += toSqlOp(i->op);
             cmd += '/';
         }
         // 绑定参数
