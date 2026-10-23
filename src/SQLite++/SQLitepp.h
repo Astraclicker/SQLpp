@@ -4,7 +4,6 @@
 
 #include <string>
 #include <vector>
-#include <mutex>
 
 #include <defSQLite.h>
 #include <json.hpp>
@@ -13,8 +12,6 @@ namespace astra_sql {
 class SQLitepp
 {
 protected:
-    //锁
-    std::mutex sqlMtx;
     // sqlite执行命令
     std::string cmd;
     // sqlite错误处理
@@ -67,7 +64,6 @@ public:
         std::string &errorCode,
         callbackFunc &&callbackSuccess
     ) {
-        std::unique_lock lock(sqlMtx);
         cmd = "create table if not exists " + tableName + " ( ";
         for (const auto &i : createRule) {
             cmd += i.field;
@@ -101,7 +97,6 @@ public:
         } catch (std::exception &error) {
             errorCode = error.what();
         }
-        lock.unlock();
         callbackSuccess();
     }
 
@@ -119,7 +114,6 @@ public:
         const std::string &tableName,
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
-        std::unique_lock lock(sqlMtx);
         cmd = "drop table if exists " + tableName;
         try {
             checkError = sqlite3_exec(db, cmd.c_str(), nullptr, nullptr, &errMsg);
@@ -129,7 +123,6 @@ public:
         } catch (std::exception &error) {
             errorCode = error.what();
         }
-        lock.unlock();
         callbackSuccess();
     }
 
@@ -149,7 +142,6 @@ public:
         const sqliteItemType &type,
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
-        std::unique_lock lock(sqlMtx);
         const auto cnt = data.size();
         cmd = "insert into " + tableName + "(";
         for (auto i = data.begin(); i != data.end(); ++i) {
@@ -193,7 +185,6 @@ public:
         } catch (std::exception &error) {
             errorCode = error.what();
         }
-        lock.unlock();
         callbackSuccess();
     }
 
@@ -211,7 +202,6 @@ public:
         const itemRule &rule,
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
-        std::unique_lock lock(sqlMtx);
         // 准备语句
         cmd = "delete from " + tableName;
         for (auto i = rule.begin(); i != rule.end(); ++i) {
@@ -235,7 +225,6 @@ public:
         } catch (std::exception &error) {
             errorCode = error.what();
         }
-        lock.unlock();
         callbackSuccess();
     }
 
@@ -255,7 +244,6 @@ public:
         const itemRule &rule,
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
-        std::unique_lock lock(sqlMtx);
         // 准备语句
         cmd = "update " + tableName + " set ";
         for (auto i = data.begin(); i != data.end(); ++i) {
@@ -285,7 +273,6 @@ public:
         } catch (std::exception &error) {
             errorCode = error.what();
         }
-        lock.unlock();
         callbackSuccess();
     }
 
@@ -307,7 +294,6 @@ public:
         std::string &errorCode,
         callbackFunc &&callbackSuccess
     ) {
-        std::unique_lock lock(sqlMtx);
         // 准备语句
         cmd = "select ";
         for (auto i = data.begin(); i != data.end(); ++i) {
@@ -348,7 +334,6 @@ public:
             errorCode = error.what();
             return nlohmann::json{};
         }
-        lock.unlock();
         callbackSuccess();
         return result;
     }
