@@ -12,7 +12,7 @@ enum class mysqlDataType
     BigInt,   // string
     Blob,     // istream
     Bool,     // bool
-    DataTime, // stream
+    DateTime, // stream
     Double,   // double
     Int32,    // int32_t
     Int64,    // int64_t
@@ -34,8 +34,8 @@ inline std::string_view toMySQLDataType(const mysqlDataType dataType) {
         case mysqlDataType::Bool: {
             return "Bool";
         }
-        case mysqlDataType::DataTime: {
-            return "DataTime";
+        case mysqlDataType::DateTime: {
+            return "DateTime";
         }
         case mysqlDataType::Double: {
             return "Double";

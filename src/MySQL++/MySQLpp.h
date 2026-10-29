@@ -237,7 +237,7 @@ public:
                     case mysqlDataType::Bool:
                         preStmt->setBoolean(i, value == "true" || value == "1");
                         break;
-                    case mysqlDataType::DataTime:
+                    case mysqlDataType::DateTime:
                         preStmt->setDateTime(i, value);
                         break;
                     case mysqlDataType::Double:
@@ -367,7 +367,7 @@ public:
                     case mysqlDataType::Bool:
                         preStmt->setBoolean(i, value == "true" || value == "1");
                         break;
-                    case mysqlDataType::DataTime:
+                    case mysqlDataType::DateTime:
                         preStmt->setDateTime(i, value);
                         break;
                     case mysqlDataType::Double:
