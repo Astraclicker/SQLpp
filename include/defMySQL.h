@@ -50,7 +50,7 @@ inline std::string_view toMySQLDataType(const mysqlDataType dataType) {
             return "Null";
         }
         case mysqlDataType::String: {
-            return "String";
+            return "Text";
         }
         case mysqlDataType::Uint32: {
             return "Uint32";
