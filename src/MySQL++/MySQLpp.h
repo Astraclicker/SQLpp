@@ -409,6 +409,7 @@ public:
      * @param tableName 表名
      * @param data 需查找的表头
      * @param rule 查找约束
+     * @param addition 附加条件
      * @param errorCode 错误信息
      * @param callbackSuccess 连接成功回调函数
      * @return json格式的查找结果
@@ -418,6 +419,7 @@ public:
         const std::string &tableName,
         const std::vector<std::string> &data,
         const itemRule &rule,
+        const std::string &addition,
         std::string &errorCode,
         callbackFunc &&callbackSuccess
     ) {
@@ -444,6 +446,8 @@ public:
             this->cmd += toSqlOp(i->op);
             this->cmd += '?';
         }
+
+        this->cmd += addition;
 
         try {
             preStmt.reset(conn->prepareStatement(this->cmd));
