@@ -167,12 +167,6 @@ public:
                 case sqliteDataType::Int:
                     sqlite3_bind_int(stmt, i + 1, std::stoi(data[i].second));
                     break;
-                case sqliteDataType::Int64:
-                    sqlite3_bind_int64(stmt, i + 1, std::stoll(data[i].second));
-                    break;
-                case sqliteDataType::Null:
-                    sqlite3_bind_null(stmt, i + 1);
-                    break;
                 case sqliteDataType::Text:
                     sqlite3_bind_text(stmt, i + 1, data[i].second.c_str(), -1, SQLITE_STATIC);
                     break;

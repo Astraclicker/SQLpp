@@ -225,9 +225,6 @@ public:
             for (int i = 1; i <= cnt; i++) {
                 const std::string &value = data.at(i - 1).second;
                 switch (types.at(i - 1)) {
-                    case mysqlDataType::BigInt:
-                        preStmt->setBigInt(i, value);
-                        break;
                     case mysqlDataType::Blob: {
                         // setBlob 惰性读取流，流必须存活到 executeUpdate() 之后
                         blobStreams.emplace_back(std::make_unique<std::istringstream>(value));
@@ -355,9 +352,6 @@ public:
             for (int i = 1; i <= cnt; i++) {
                 const std::string &value = data.at(i - 1).second;
                 switch (types.at(i - 1)) {
-                    case mysqlDataType::BigInt:
-                        preStmt->setBigInt(i, value);
-                        break;
                     case mysqlDataType::Blob: {
                         // setBlob 惰性读取流，流必须存活到 executeUpdate() 之后
                         blobStreams.emplace_back(std::make_unique<std::istringstream>(value));

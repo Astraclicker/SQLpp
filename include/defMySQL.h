@@ -9,7 +9,6 @@ constexpr uint16_t MySQL_DEFAULT_PORT = 3306;
 // mysql数据类型枚举
 enum class mysqlDataType
 {
-    BigInt,   // string
     Blob,     // istream
     Bool,     // bool
     DateTime, // stream
@@ -25,9 +24,6 @@ enum class mysqlDataType
 // mysql数据类型转换到string
 inline std::string_view toMySQLDataType(const mysqlDataType dataType) {
     switch (dataType) {
-        case mysqlDataType::BigInt: {
-            return "BigInt";
-        }
         case mysqlDataType::Blob: {
             return "Blob";
         }
@@ -41,10 +37,10 @@ inline std::string_view toMySQLDataType(const mysqlDataType dataType) {
             return "Double";
         }
         case mysqlDataType::Int32: {
-            return "Int32";
+            return "Int";
         }
         case mysqlDataType::Int64: {
-            return "Int64";
+            return "BigInt";
         }
         case mysqlDataType::Null: {
             return "Null";
@@ -53,10 +49,10 @@ inline std::string_view toMySQLDataType(const mysqlDataType dataType) {
             return "Text";
         }
         case mysqlDataType::Uint32: {
-            return "Uint32";
+            return "Int UNSIGNED";
         }
         case mysqlDataType::Uint64: {
-            return "Uint64";
+            return "BigInt UNSIGNED";
         }
     }
     return "";

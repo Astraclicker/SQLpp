@@ -9,8 +9,6 @@ enum class sqliteDataType
     Blob,
     Double,
     Int,
-    Int64,
-    Null,
     Text,
 };
 
@@ -21,16 +19,10 @@ inline std::string_view toSqliteDataType(const sqliteDataType dataType) {
             return "Blob";
         }
         case sqliteDataType::Double: {
-            return "Double";
+            return "Real";
         }
         case sqliteDataType::Int: {
-            return "Int";
-        }
-        case sqliteDataType::Int64: {
-            return "Int64";
-        }
-        case sqliteDataType::Null: {
-            return "Null";
+            return "INTEGER";
         }
         case sqliteDataType::Text: {
             return "Text";
