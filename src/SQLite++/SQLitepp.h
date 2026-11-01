@@ -23,7 +23,29 @@ protected:
     // sqlite数据库接口
     sqlite3 *db{};
 
+    // 释放当前预处理语句，避免句柄被覆盖而泄漏
+    void resetStatement() {
+        if (stmt != nullptr) {
+            sqlite3_finalize(stmt);
+            stmt = nullptr;
+        }
+    }
+
+    // 连接是否已打开
+    bool isOpen() const {
+        return db != nullptr;
+    }
+
 public:
+    // 句柄由本类独占，禁止拷贝，避免析构时重复释放
+    SQLitepp(const SQLitepp &) = delete;
+
+    SQLitepp &operator=(const SQLitepp &) = delete;
+
+    SQLitepp(SQLitepp &&) = delete;
+
+    SQLitepp &operator=(SQLitepp &&) = delete;
+
     /**
      * @brief 构造函数
      * @param dbName 数据库名称
@@ -36,12 +58,26 @@ public:
              const bool foreign_key,
              std::string &errorCode,
              callbackFunc &&callbackSuccess) {
+        errorCode.clear();
         if (sqlite3_open(dbName.c_str(), &db) != SQLITE_OK) {
-            errorCode = sqlite3_errmsg(db);
-            if (foreign_key) {
-                sqlite3_exec(db, "PRAGMA foreign_keys = ON;", nullptr, nullptr, nullptr);
+            errorCode = db != nullptr ? sqlite3_errmsg(db) : "sqlite3_open failed";
+            if (db != nullptr) {
+                sqlite3_close(db);
+                db = nullptr;
             }
             return;
+        }
+        // 外键开关只能在连接成功之后设置
+        if (foreign_key) {
+            checkError = sqlite3_exec(db, "PRAGMA foreign_keys = ON;", nullptr, nullptr, &errMsg);
+            if (checkError != SQLITE_OK) {
+                errorCode = sqlite3_errmsg(db);
+                sqlite3_free(errMsg);
+                errMsg = nullptr;
+                sqlite3_close(db);
+                db = nullptr;
+                return;
+            }
         }
         callbackSuccess();
     }
@@ -65,6 +101,11 @@ public:
         std::string &errorCode,
         callbackFunc &&callbackSuccess
     ) {
+        errorCode.clear();
+        if (!isOpen()) {
+            errorCode = "sqlite database is not open";
+            return;
+        }
         cmd = "create table if not exists " + tableName + " ( ";
         for (const auto &i : createRule) {
             cmd += i.field;
@@ -95,10 +136,10 @@ public:
             if (checkError != SQLITE_OK) {
                 throw std::runtime_error(sqlite3_errmsg(db));
             }
+            callbackSuccess();
         } catch (std::exception &error) {
             errorCode = error.what();
         }
-        callbackSuccess();
     }
 
     /**
@@ -115,16 +156,21 @@ public:
         const std::string &tableName,
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
+        errorCode.clear();
+        if (!isOpen()) {
+            errorCode = "sqlite database is not open";
+            return;
+        }
         cmd = "drop table if exists " + tableName;
         try {
             checkError = sqlite3_exec(db, cmd.c_str(), nullptr, nullptr, &errMsg);
             if (checkError != SQLITE_OK) {
                 throw std::runtime_error(sqlite3_errmsg(db));
             }
+            callbackSuccess();
         } catch (std::exception &error) {
             errorCode = error.what();
         }
-        callbackSuccess();
     }
 
     /**
@@ -143,6 +189,11 @@ public:
         const sqliteItemType &type,
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
+        errorCode.clear();
+        if (!isOpen()) {
+            errorCode = "sqlite database is not open";
+            return;
+        }
         const auto cnt = data.size();
         cmd = "insert into " + tableName + "(";
         for (auto i = data.begin(); i != data.end(); ++i) {
@@ -154,33 +205,38 @@ public:
             cmd += i == 0 ? "?" : ",?";
         }
         cmd += ");";
-        sqlite3_prepare_v2(db, cmd.c_str(), -1, &stmt, nullptr);
-
-        for (int i = 0; i < cnt; i++) {
-            switch (type[i]) {
-                case sqliteDataType::Blob:
-                    sqlite3_bind_blob(stmt, i + 1, data[i].second.c_str(), -1, SQLITE_STATIC);
-                    break;
-                case sqliteDataType::Double:
-                    sqlite3_bind_double(stmt, i + 1, std::stod(data[i].second));
-                    break;
-                case sqliteDataType::Int:
-                    sqlite3_bind_int(stmt, i + 1, std::stoi(data[i].second));
-                    break;
-                case sqliteDataType::Text:
-                    sqlite3_bind_text(stmt, i + 1, data[i].second.c_str(), -1, SQLITE_STATIC);
-                    break;
-            }
-        }
+        resetStatement();
         try {
+            checkError = sqlite3_prepare_v2(db, cmd.c_str(), -1, &stmt, nullptr);
+            if (checkError != SQLITE_OK) {
+                throw std::runtime_error(sqlite3_errmsg(db));
+            }
+            for (int i = 0; i < cnt; i++) {
+                switch (type[i]) {
+                    case sqliteDataType::Blob:
+                        sqlite3_bind_blob(stmt, i + 1, data[i].second.c_str(), -1, SQLITE_STATIC);
+                        break;
+                    case sqliteDataType::Double:
+                        sqlite3_bind_double(stmt, i + 1, std::stod(data[i].second));
+                        break;
+                    case sqliteDataType::Int:
+                        sqlite3_bind_int(stmt, i + 1, std::stoi(data[i].second));
+                        break;
+                    case sqliteDataType::Text:
+                        sqlite3_bind_text(stmt, i + 1, data[i].second.c_str(), -1, SQLITE_STATIC);
+                        break;
+                }
+            }
             checkError = sqlite3_step(stmt);
             if (checkError != SQLITE_DONE) {
                 throw std::runtime_error(sqlite3_errmsg(db));
             }
+            resetStatement();
+            callbackSuccess();
         } catch (std::exception &error) {
             errorCode = error.what();
+            resetStatement();
         }
-        callbackSuccess();
     }
 
     /**
@@ -197,30 +253,42 @@ public:
         const itemRule &rule,
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
+        errorCode.clear();
+        if (!isOpen()) {
+            errorCode = "sqlite database is not open";
+            return;
+        }
         // 准备语句
         cmd = "delete from " + tableName;
         for (auto i = rule.begin(); i != rule.end(); ++i) {
             cmd += i == rule.begin() ? " where" : " " + i->link;
-            cmd += " " + i->field + " " += toSqlOp(i->op);
+            cmd += " " + i->field + " ";
+            cmd += toSqlOp(i->op);
             cmd += '?';
         }
         cmd += ';';
         const auto cnt = rule.size();
-        sqlite3_prepare_v2(db, cmd.c_str(), -1, &stmt, nullptr);
-        // 绑定参数
-        for (int i = 0; i < cnt; i++) {
-            sqlite3_bind_text(stmt, i + 1, rule[i].value.c_str(), -1, SQLITE_STATIC);
-        }
-        // 执行语句
+        resetStatement();
         try {
+            checkError = sqlite3_prepare_v2(db, cmd.c_str(), -1, &stmt, nullptr);
+            if (checkError != SQLITE_OK) {
+                throw std::runtime_error(sqlite3_errmsg(db));
+            }
+            // 绑定参数
+            for (int i = 0; i < cnt; i++) {
+                sqlite3_bind_text(stmt, i + 1, rule[i].value.c_str(), -1, SQLITE_STATIC);
+            }
+            // 执行语句
             checkError = sqlite3_step(stmt);
             if (checkError != SQLITE_DONE) {
                 throw std::runtime_error(sqlite3_errmsg(db));
             }
+            resetStatement();
+            callbackSuccess();
         } catch (std::exception &error) {
             errorCode = error.what();
+            resetStatement();
         }
-        callbackSuccess();
     }
 
     /**
@@ -239,6 +307,11 @@ public:
         const itemRule &rule,
         std::string &errorCode,
         callbackFunc &&callbackSuccess) {
+        errorCode.clear();
+        if (!isOpen()) {
+            errorCode = "sqlite database is not open";
+            return;
+        }
         // 准备语句
         cmd = "update " + tableName + " set ";
         for (auto i = data.begin(); i != data.end(); ++i) {
@@ -246,29 +319,36 @@ public:
         }
         for (auto i = rule.begin(); i != rule.end(); ++i) {
             cmd += i == rule.begin() ? " where" : " " + i->link;
-            cmd += " " + i->field + " " += toSqlOp(i->op);
+            cmd += " " + i->field + " ";
+            cmd += toSqlOp(i->op);
             cmd += '?';
         }
-        sqlite3_prepare_v2(db, cmd.c_str(), -1, &stmt, nullptr);
         const auto cnt_data = data.size();
         const auto cnt_rule = rule.size();
-        // 绑定参数
-        for (auto i = 0; i < cnt_data; i++) {
-            sqlite3_bind_text(stmt, i + 1, data[i].second.c_str(), -1, SQLITE_STATIC);
-        }
-        for (auto i = 0; i < cnt_rule; i++) {
-            sqlite3_bind_text(stmt, i + cnt_data + 1, rule[i].value.c_str(), -1, SQLITE_STATIC);
-        }
-        // 执行语句
+        resetStatement();
         try {
+            checkError = sqlite3_prepare_v2(db, cmd.c_str(), -1, &stmt, nullptr);
+            if (checkError != SQLITE_OK) {
+                throw std::runtime_error(sqlite3_errmsg(db));
+            }
+            // 绑定参数
+            for (auto i = 0; i < cnt_data; i++) {
+                sqlite3_bind_text(stmt, i + 1, data[i].second.c_str(), -1, SQLITE_STATIC);
+            }
+            for (auto i = 0; i < cnt_rule; i++) {
+                sqlite3_bind_text(stmt, i + cnt_data + 1, rule[i].value.c_str(), -1, SQLITE_STATIC);
+            }
+            // 执行语句
             checkError = sqlite3_step(stmt);
             if (checkError != SQLITE_DONE) {
                 throw std::runtime_error(sqlite3_errmsg(db));
             }
+            resetStatement();
+            callbackSuccess();
         } catch (std::exception &error) {
             errorCode = error.what();
+            resetStatement();
         }
-        callbackSuccess();
     }
 
     /**
@@ -282,13 +362,18 @@ public:
      */
 
     template <typename callbackFunc>
-    nlohmann::json sqlitSearchItem(
+    nlohmann::json sqliteSearchItem(
         const std::string &tableName,
         const std::vector<std::string> &data,
         const itemRule &rule,
         std::string &errorCode,
         callbackFunc &&callbackSuccess
     ) {
+        errorCode.clear();
+        if (!isOpen()) {
+            errorCode = "sqlite database is not open";
+            return nlohmann::json{};
+        }
         // 准备语句
         cmd = "select ";
         for (auto i = data.begin(); i != data.end(); ++i) {
@@ -297,14 +382,9 @@ public:
         cmd += " from " + tableName;
         for (auto i = rule.begin(); i != rule.end(); ++i) {
             cmd += i == rule.begin() ? " where" : " " + i->link;
-            cmd += " " + i->field + " " += toSqlOp(i->op);
-            cmd += '/';
-        }
-        // 绑定参数
-        sqlite3_prepare_v2(db, cmd.c_str(), -1, &stmt, nullptr);
-        const auto cnt_rule = rule.size();
-        for (auto i = 0; i < cnt_rule; i++) {
-            sqlite3_bind_text(stmt, i + 1, rule[i].value.c_str(), -1, SQLITE_STATIC);
+            cmd += " " + i->field + " ";
+            cmd += toSqlOp(i->op);
+            cmd += '?';
         }
         // 执行语句,写入结果
         const auto cnt_data = data.size();
@@ -313,31 +393,51 @@ public:
             result[data[i]] = nlohmann::json::array();
         }
 
+        resetStatement();
         try {
+            checkError = sqlite3_prepare_v2(db, cmd.c_str(), -1, &stmt, nullptr);
+            if (checkError != SQLITE_OK) {
+                throw std::runtime_error(sqlite3_errmsg(db));
+            }
+            // 绑定参数
+            const auto cnt_rule = rule.size();
+            for (auto i = 0; i < cnt_rule; i++) {
+                sqlite3_bind_text(stmt, i + 1, rule[i].value.c_str(), -1, SQLITE_STATIC);
+            }
             while ((checkError = sqlite3_step(stmt)) == SQLITE_ROW) {
                 for (auto i = 0; i < cnt_data; i++) {
-                    result[data[i]].push_back(
-                        reinterpret_cast<const char *>(sqlite3_column_text(stmt, i))
-                    );
+                    // 该列为 NULL 时 sqlite3_column_text 返回空指针
+                    const auto *text = sqlite3_column_text(stmt, i);
+                    if (text == nullptr) {
+                        result[data[i]].push_back(nlohmann::json(nullptr));
+                    } else {
+                        result[data[i]].push_back(reinterpret_cast<const char *>(text));
+                    }
                 }
             }
 
             if (checkError != SQLITE_DONE) {
                 throw std::runtime_error(sqlite3_errmsg(db));
             }
+            resetStatement();
+            callbackSuccess();
         } catch (std::exception &error) {
             errorCode = error.what();
+            resetStatement();
             return nlohmann::json{};
         }
-        callbackSuccess();
         return result;
     }
 
     // 析构
     ~SQLitepp() {
-        sqlite3_close(db);
+        resetStatement();
+        if (db != nullptr) {
+            sqlite3_close(db);
+            db = nullptr;
+        }
         sqlite3_free(errMsg);
-        sqlite3_finalize(stmt);
+        errMsg = nullptr;
     }
 };
 } // namespace astra_sql
