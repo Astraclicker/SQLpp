@@ -10,10 +10,13 @@
 #include <sstream>
 #include <mutex>
 #include <queue>
+#include <chrono>
 
 #include <defSqlCommon.h>
 #include <defMySQL.h>
 #include <json.hpp>
+
+#include "MySQLpp.h"
 
 namespace astra_sql {
 class MySQLpp
@@ -30,6 +33,22 @@ protected:
     std::string cmd;
 
 public:
+    /**
+    * @brief 探活：执行一条不产生结果集的空语句
+    * @return true 连接可用
+     */
+    [[nodiscard]] bool ping() const noexcept {
+        if (conn == nullptr) {
+            return false;
+        }
+        try {
+            stmt->execute("DO 1");
+            return true;
+        } catch (const std::exception &) {
+            return false;
+        }
+    }
+
     /**
      * @brief MySQLpp类构造函数
      * @param host MySQL服务器地址
@@ -441,6 +460,7 @@ public:
             this->cmd += '?';
         }
 
+        this->cmd += ' ';
         this->cmd += addition;
 
         try {
@@ -478,6 +498,51 @@ public:
     ~MySQLpp() = default;
 };
 
+//向前声明MySQL连接池类
+class MySQLppPool;
+
+class MySQLppLease
+{
+protected:
+    MySQLppPool &pool;
+    std::unique_ptr<MySQLpp> conn;
+
+public:
+    //构造函数
+    MySQLppLease(std::unique_ptr<MySQLpp> _conn, MySQLppPool &_pool)
+        : pool(_pool), conn(std::move(_conn)) {
+    };
+
+    //禁用拷贝
+    MySQLppLease(const MySQLppLease &) = delete;
+
+    MySQLppLease &operator=(const MySQLppLease &) = delete;
+
+    //禁用默认构造
+    MySQLppLease() noexcept = delete;
+
+    //重载移动构造
+    MySQLppLease(MySQLppLease &&other) noexcept
+        : pool(other.pool), conn(std::move(other.conn)) {
+    }
+
+    //返回MySQL接口
+    MySQLpp *operator->() const noexcept {
+        return conn.get();
+    }
+
+    MySQLpp &operator*() const noexcept {
+        return *conn;
+    }
+
+    //判空逻辑
+    explicit operator bool() const noexcept {
+        return conn != nullptr;
+    }
+
+    ~MySQLppLease();
+};
+
 class MySQLppPool
 {
 protected:
@@ -489,6 +554,9 @@ protected:
 
     //存放连接的队列
     std::queue<std::unique_ptr<MySQLpp> > connectQueue;
+
+    //构造标志
+    bool initialized = false;
 
     //最小连接数(空闲)
     unsigned long long minConnectNums = 4;
@@ -505,15 +573,14 @@ protected:
     std::string userName;
     std::string password;
 
-    //构造函数
-    MySQLppPool() {
-    }
+    //连接租约
+    friend class MySQLppLease;
 
 public:
     //连接池接口
     static MySQLppPool &instance() {
-        static MySQLppPool pool;
-        return pool;
+        static auto *pool = new MySQLppPool();
+        return *pool;
     }
 
     /**
@@ -539,35 +606,37 @@ public:
         callbackFunc &&callbackSuccess
     ) {
         errorCode.clear();
-        static std::once_flag flag;
-        std::call_once(
-            flag,
-            [&]() {
-                this->host = _host;
-                this->port = _port;
-                this->userName = _userName;
-                this->password = _password;
-                this->minConnectNums = _minConnectNums;
-                this->maxConnectNums = _maxConnectNums;
+        if (!initialized) {
+            this->host = _host;
+            this->port = _port;
+            this->userName = _userName;
+            this->password = _password;
+            this->minConnectNums = _minConnectNums;
+            this->maxConnectNums = _maxConnectNums;
 
-                for (unsigned long long i = 0; i < _minConnectNums; ++i) {
-                    std::string ec;
-                    auto conn = std::make_unique<MySQLpp>(
-                        _host,
-                        _port,
-                        _userName,
-                        _password,
-                        ec,
-                        []() {
-                        });
-                    if (!ec.empty()) {
-                        errorCode = ec;
-                        return;
-                    }
-                    connectQueue.push(std::move(conn));
+            for (unsigned long long i = 0; i < _minConnectNums; ++i) {
+                std::string ec;
+                auto conn = std::make_unique<MySQLpp>(
+                    _host,
+                    _port,
+                    _userName,
+                    _password,
+                    ec,
+                    []() {
+                    });
+                if (!ec.empty()) {
+                    errorCode = ec;
+                    return;
                 }
-                callbackSuccess();
-            });
+                connectQueue.push(std::move(conn));
+            }
+            std::unique_lock lock(mtx);
+            initialized = true;
+            lock.unlock();
+            callbackSuccess();
+        } else {
+            errorCode = "Constructor called multiple times";
+        }
     }
 
     /**
@@ -578,7 +647,7 @@ public:
      * @return MySQL连接
      */
     template <typename callbackFunc>
-    std::unique_ptr<MySQLpp> acquire(
+    MySQLppLease acquire(
         std::string &errorCode,
         callbackFunc &&callbackSuccess,
         const std::chrono::milliseconds timeoutMs) {
@@ -604,42 +673,63 @@ public:
                     currentConnectNums--;
                     lock.unlock();
                     errorCode = ec;
-                    return nullptr;
+                    return {nullptr, *this};
                 }
                 callbackSuccess();
-                return conn;
+                return MySQLppLease(std::move(conn), *this);
             }
             if (cv.wait_until(lock, ddl) == std::cv_status::timeout) {
                 lock.unlock();
                 errorCode = "acquire connection timeout";
-                return nullptr;
+                return {nullptr, *this};
             }
         }
 
         auto conn = std::move(connectQueue.front());
         connectQueue.pop();
+        //解锁 校验conn是否存活
+        lock.unlock();
+        if (!conn->ping()) {
+            std::string ec;
+            conn = std::make_unique<MySQLpp>(
+                host,
+                port,
+                userName,
+                password,
+                ec,
+                []() {
+                }
+            );
+            if (!ec.empty()) {
+                errorCode = ec;
+                return {nullptr, *this};
+            }
+        }
+        lock.lock();
         currentConnectNums++;
         lock.unlock();
         callbackSuccess();
-        return conn;
+        return {std::move(conn), *this};
     }
 
     /**
-     * @brief 归还连接
-     * @param conn 归还的连接
-     * @param callbackSuccess 归还成功回调函数
-     */
-    template <typename callbackFunc>
+    * @brief 归还连接
+    * @param conn 归还的连接
+    */
     void release(
-        std::unique_ptr<MySQLpp> conn,
-        callbackFunc &&callbackSuccess
-    ) {
+        std::unique_ptr<MySQLpp> conn) {
+        if (conn == nullptr) {
+            return;
+        }
         std::unique_lock lock(mtx);
         connectQueue.push(std::move(conn));
         currentConnectNums--;
         lock.unlock();
         cv.notify_one();
-        callbackSuccess();
     }
 };
+
+inline MySQLppLease::~MySQLppLease() {
+    pool.release(std::move(conn));
+}
 } // namespace astra_sql
