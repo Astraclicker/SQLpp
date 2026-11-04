@@ -9,14 +9,13 @@
 #include <vector>
 #include <sstream>
 #include <mutex>
-#include <queue>
+#include <deque>
 #include <chrono>
+#include <condition_variable>
 
 #include <defSqlCommon.h>
 #include <defMySQL.h>
 #include <json.hpp>
-
-#include "MySQLpp.h"
 
 namespace astra_sql {
 class MySQLpp
@@ -498,6 +497,13 @@ public:
     ~MySQLpp() = default;
 };
 
+//连接池中连接
+struct poolConn
+{
+    std::unique_ptr<MySQLpp> sqlConn;
+    std::chrono::steady_clock::time_point idleSince;
+};
+
 //向前声明MySQL连接池类
 class MySQLppPool;
 
@@ -553,7 +559,7 @@ protected:
     std::condition_variable cv;
 
     //存放连接的队列
-    std::queue<std::unique_ptr<MySQLpp> > connectQueue;
+    std::deque<poolConn> connectQueue;
 
     //构造标志
     bool initialized = false;
@@ -566,6 +572,9 @@ protected:
 
     //当前连接数(占用)
     unsigned long long currentConnectNums = 0;
+
+    //连接池中连接需重新ping的最小时间
+    std::chrono::seconds idlePingThreshold{30};
 
     //MySQL连接参数
     std::string host;
@@ -628,7 +637,7 @@ public:
                     errorCode = ec;
                     return;
                 }
-                connectQueue.push(std::move(conn));
+                connectQueue.push_back({std::move(conn), std::chrono::steady_clock::now()});
             }
             std::unique_lock lock(mtx);
             initialized = true;
@@ -685,13 +694,16 @@ public:
             }
         }
 
-        auto conn = std::move(connectQueue.front());
-        connectQueue.pop();
-        //解锁 校验conn是否存活
+        auto item = std::move(connectQueue.front());
+        connectQueue.pop_front();
+        //解锁,防止网络IO占用导致阻塞
         lock.unlock();
-        if (!conn->ping()) {
+
+        if (std::chrono::steady_clock::now() - item.idleSince >= idlePingThreshold &&
+            !item.sqlConn->ping()
+        ) {
             std::string ec;
-            conn = std::make_unique<MySQLpp>(
+            item.sqlConn = std::make_unique<MySQLpp>(
                 host,
                 port,
                 userName,
@@ -709,20 +721,19 @@ public:
         currentConnectNums++;
         lock.unlock();
         callbackSuccess();
-        return {std::move(conn), *this};
+        return {std::move(item.sqlConn), *this};
     }
 
     /**
     * @brief 归还连接
     * @param conn 归还的连接
     */
-    void release(
-        std::unique_ptr<MySQLpp> conn) {
+    void release(std::unique_ptr<MySQLpp> conn) {
         if (conn == nullptr) {
             return;
         }
         std::unique_lock lock(mtx);
-        connectQueue.push(std::move(conn));
+        connectQueue.push_back(poolConn{std::move(conn), std::chrono::steady_clock::now()});
         currentConnectNums--;
         lock.unlock();
         cv.notify_one();
